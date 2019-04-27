@@ -27,4 +27,7 @@ swaymsg -t get_tree | jq -r '[recurse(.nodes[]?)|recurse(.floating_nodes[]?)|sel
 selected=$(echo "$windows" | rofi -dmenu -i -p "Window" | awk '{print $NF}')
 
 # Tell sway to focus said window
-swaymsg [con_id="$selected"] focus
+if [ ! -z "$selected" ]
+then
+    swaymsg [con_id="$selected"] focus
+fi
