@@ -20,7 +20,7 @@
 
 # Obtain the avaliable windows' workspaces, names and IDs as strings
 windows=$(
-swaymsg -t get_tree | jq -r '[recurse(.nodes[]?)|recurse(.floating_nodes[]?)|select(.type=="workspace")| . as $workspace | recurse(.nodes[]?)|select(.type=="con" and .name!=null)|{workspace: $workspace.name, name: .name, id: .id}]|sort_by(.workspace, .name)[]|.workspace + " " + .name + "  " + (.id|tostring)'
+swaymsg -t get_tree | jq -r '[recurse(.nodes[]?)|recurse(.floating_nodes[]?)|select(.type=="workspace")| . as $workspace | recurse(.nodes[]?)|select(.type=="con" and .name!=null)|{workspace: $workspace.name, name: .name, id: .id, focused: .focused}]|sort_by(.workspace, .name)[]|.workspace + if .focused then "* " else "  " end + .name + "  " + (.id|tostring)'
 )
 
 # Select window with rofi, obtaining ID of selected window
