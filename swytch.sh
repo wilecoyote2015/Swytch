@@ -18,16 +18,26 @@
 
 #!/bin/bash
 
+# obtain command to execute with swaymsg for selected window
+if [ -z "$1" ]
+then 
+    command_=focus
+else
+    command_=$1
+fi
+
 # Obtain the avaliable windows' workspaces, names and IDs as strings
 windows=$(
 swaymsg -t get_tree | jq -r '[recurse(.nodes[]?)|recurse(.floating_nodes[]?)|select(.type=="workspace")| . as $workspace | recurse(.nodes[]?)|select(.type=="con" and .name!=null)|{workspace: $workspace.name, name: .name, id: .id, focused: .focused}]|sort_by(.workspace, .name)[]|.workspace + if .focused then "* " else "  " end + .name + "  " + (.id|tostring)'
 )
 
 # Select window with rofi, obtaining ID of selected window
-selected=$(echo "$windows" | rofi -dmenu -i -p "Window" | awk '{print $NF}')
+selected=$(echo "$windows" | rofi -dmenu -i -p "$command_" | awk '{print $NF}')
+
+echo $command
 
 # Tell sway to focus said window
 if [ ! -z "$selected" ]
 then
-    swaymsg [con_id="$selected"] focus
+    swaymsg [con_id="$selected"] "$command_"
 fi
