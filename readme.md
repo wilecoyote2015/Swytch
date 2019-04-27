@@ -33,7 +33,7 @@ The following programs are invoked:
 
 # Usage
 See https://github.com/davatorium/rofi for the general usage of rofi.  
-In a nutshell, simply select the desired Window using the arrow keys or by typing a part of it's name.  
+In a nutshell, simply select the desired Window using the arrow keys or by typing a part of it's name and press enter.  
 The window list has the form:  
 ```
 [Workpace name][* if window is active] [window name] [window id]
