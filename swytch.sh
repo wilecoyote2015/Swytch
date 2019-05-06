@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #    Swytch is a script providing a window switcher for sway using rofi, awk and jq.
 #    The script is based on:
 #    https://www.reddit.com/r/swaywm/comments/aolf3u/quick_script_for_rofi_alttabbing_window_switcher/
@@ -15,8 +17,6 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-#!/bin/bash
 
 # obtain command to execute with swaymsg for selected window
 if [ -z "$1" ]
