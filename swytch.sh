@@ -27,17 +27,42 @@ else
 fi
 
 # Obtain the avaliable windows' workspaces, names and IDs as strings
-windows=$(
+mapfile -t windows < <(
 swaymsg -t get_tree | jq -r '[recurse(.nodes[]?)|recurse(.floating_nodes[]?)|select(.type=="workspace")| . as $workspace | recurse(.nodes[]?)|select(.type=="con" and .name!=null)|{workspace: $workspace.name, name: .name, id: .id, focused: .focused}]|sort_by(.workspace, .name)[]|.workspace + if .focused then "* " else "  " end + .name + "  " + (.id|tostring)'
 )
 
-# Select window with rofi, obtaining ID of selected window
-selected=$(echo "$windows" | rofi -dmenu -i -p "$command_" | awk '{print $NF}')
+# insert workspace markers 
+separator_workspaces='-----------------------------------'
+windows_separators=()
+workspace_previous=''
+index_workspace_active=0
+num_separators=0
+for index_window in "${!windows[@]}"
+do 
+    window=${windows[$index_window]}
+    workspace=${window:0:1}
+    if [ "$workspace" != "$workspace_previous" ] && [ ! -z "$workspace_previous" ]
+    then
+        windows_separators+=($separator_workspaces)
+        num_separators=$(($num_separators+1))
+    fi
+    # obtain index of the active window
+    if [ "${window:1:1}" == "*" ]
+    then 
+        index_workspace_active=$(($index_window+$num_separators))
+    fi
+    windows_separators+=("$window")
+    workspace_previous=$workspace
+done
 
-echo $command
+#echo ${windows_separators[@]}
+
+# Select window with rofi, obtaining ID of selected window
+selected=$(printf '%s\n' "${windows_separators[@]}" | rofi -dmenu -i -p "$command_" -a "$index_workspace_active" | awk '{print $NF}')
 
 # Tell sway to focus said window
-if [ ! -z "$selected" ]
+# todo: do not execute if selected is the separator
+if [ ! -z "$selected"]
 then
     swaymsg [con_id="$selected"] "$command_"
 fi
