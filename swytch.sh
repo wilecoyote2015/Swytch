@@ -58,7 +58,7 @@ done
 #echo ${windows_separators[@]}
 
 # Select window with rofi, obtaining ID of selected window
-selected=$(printf '%s\n' "${windows_separators[@]}" | rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -s -width 80 | awk '{print $NF}')
+selected=$(printf '%s\n' "${windows_separators[@]}" | rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -s -width 80 -lines 30 | awk '{print $NF}')
 
 # Tell sway to focus said window
 # todo: do not execute if selected is the separator
