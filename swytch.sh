@@ -18,6 +18,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+# todo: first, query all existing workspaces from sway and build color dict, so that
+#   all workspaces always get the same color, even if no windows at some workspace in between exists.
+
 # obtain command to execute with swaymsg for selected window
 if [ -z "$1" ]
 then 
@@ -31,34 +35,52 @@ mapfile -t windows < <(
 swaymsg -t get_tree | jq -r '[recurse(.nodes[]?)|recurse(.floating_nodes[]?)|select(.type=="workspace")| . as $workspace | recurse(.nodes[]?)|select(.type=="con" and .name!=null)|{workspace: $workspace.name, name: .name, id: .id, focused: .focused}]|sort_by(.workspace, .name)[]|.workspace + if .focused then "* " else "  " end + .name + "  " + (.id|tostring)'
 )
 
-# insert workspace markers 
-separator_workspaces='-----------------------------------'
 windows_separators=()
+colors=(blue green orange red magenta)
 workspace_previous=''
 index_workspace_active=0
 num_separators=0
+index_color=0
+bold=-1
 for index_window in "${!windows[@]}"
 do 
-    window=${windows[$index_window]}
+    window="${windows[$index_window]}"
+    # todo: consider arbitraty workspace name lenght by separating by space instead of simply taking first argument.
     workspace=${window:0:1}
-    if [ "$workspace" != "$workspace_previous" ] && [ ! -z "$workspace_previous" ]
-    then
-        windows_separators+=($separator_workspaces)
-        num_separators=$(($num_separators+1))
-    fi
     # obtain index of the active window
     if [ "${window:1:1}" == "*" ]
     then 
-        index_workspace_active=$(($index_window+$num_separators))
+        index_workspace_active=$(($index_window))
     fi
-    windows_separators+=("$window")
+    
+    
+    if [ "$workspace" != "$workspace_previous" ] && [ ! -z "$workspace_previous" ]
+    then
+        index_color=$index_color+1
+        #bold=-$bold  # activate in case that lines shall be drawn bold and regular with alternating workspace
+    fi
+    
+    if (($index_color == ${#colors[@]}))
+    then	
+        index_color=0
+    fi
+    if (( $bold == 1)) 
+    then
+        windows_separators+=("<b><span foreground=\"${colors[$index_color]}\">[${workspace}]</span>${window:1}</b>")
+        #windows_separators+=("<span foreground=\"${colors[$index_color]}\">[${workspace}]</span>${window:1}")
+    else
+        windows_separators+=("<span foreground=\"${colors[$index_color]}\">[${workspace}]</span>${window:1}")
+    fi
+    # if window has different workspace than previous, use next color. Cycle through colors
+    
+
     workspace_previous=$workspace
 done
 
 #echo ${windows_separators[@]}
 
 # Select window with rofi, obtaining ID of selected window
-selected=$(printf '%s\n' "${windows_separators[@]}" | rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -s -width 80 -lines 30 | awk '{print $NF}')
+selected=$(printf '%s\n' "${windows_separators[@]}" | rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -s -width 80 -lines 30 -markup-rows | awk '{print $NF}')
 
 # Tell sway to focus said window
 # todo: do not execute if selected is the separator
