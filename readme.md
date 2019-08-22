@@ -36,5 +36,6 @@ See https://github.com/davatorium/rofi for the general usage of rofi.
 In a nutshell, simply select the desired Window using the arrow keys or by typing a part of it's name and press enter.  
 The window list has the form:  
 ```
-[Workpace name][* if window is active] [window name] [window id]
+[Workpace name][* if window is active] [application id] [window name] [window id]
 ```
+The workspace names are colored in order to help noticing which windows are on the same workspaces quickly.
