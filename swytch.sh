@@ -86,5 +86,5 @@ selected=$(printf '%s\n' "${windows_separators[@]}" | rofi -dmenu -i -p "$comman
 # todo: do not execute if selected is the separator
 if [ ! -z "$selected" ]
 then
-    swaymsg [con_id="$selected"] "$command_"
+    swaymsg "[con_id=$selected] $command_"
 fi
