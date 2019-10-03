@@ -32,7 +32,15 @@ fi
 
 # Obtain the avaliable windows' workspaces, names and IDs as strings
 mapfile -t windows < <(
-swaymsg -t get_tree | jq -r '[recurse(.nodes[]?)|recurse(.floating_nodes[]?)|select(.type=="workspace")| . as $workspace | recurse(.nodes[]?)|select(.type=="con" and .name!=null)|{workspace: $workspace.name, name: .name, id: .id, focused: .focused, app_id: .app_id}]|sort_by(.workspace, .name)[]|.workspace + if .focused then "* " else "  " end + .app_id + " - " +  .name + "  " + (.id|tostring)'
+swaymsg -t get_tree | jq -r '[
+    recurse(.nodes[]?)
+    |recurse(.floating_nodes[]?)
+    |select(.type=="workspace")
+    | . as $workspace | recurse(.nodes[]?)
+    |select(.type=="con" and .name!=null)
+    |{workspace: $workspace.name, name: .name, id: .id, focused: .focused, app_id: .app_id}]
+    |sort_by(.workspace, .name)[]
+    |.workspace + if .focused then "* " else "  " end + .app_id + " - " +  .name + "  " + (.id|tostring)'
 )
 
 windows_separators=()
@@ -45,7 +53,7 @@ bold=-1
 for index_window in "${!windows[@]}"
 do 
     window="${windows[$index_window]}"
-    # todo: consider arbitraty workspace name lenght by separating by space instead of simply taking first argument.
+    # todo: consider arbitraty workspace name length by separating by space instead of simply taking first argument.
     workspace=${window:0:1}
     # obtain index of the active window
     if [ "${window:1:1}" == "*" ]
@@ -53,11 +61,10 @@ do
         index_workspace_active=$(($index_window))
     fi
     
-    
+    # if window has different workspace than previous, use next color. Cycle through colors
     if [ "$workspace" != "$workspace_previous" ] && [ ! -z "$workspace_previous" ]
     then
         index_color=$index_color+1
-        #bold=-$bold  # activate in case that lines shall be drawn bold and regular with alternating workspace
     fi
     
     if (($index_color == ${#colors[@]}))
@@ -67,24 +74,47 @@ do
     if (( $bold == 1)) 
     then
         windows_separators+=("<b><span foreground=\"${colors[$index_color]}\">[${workspace}]</span>${window:1}</b>")
-        #windows_separators+=("<span foreground=\"${colors[$index_color]}\">[${workspace}]</span>${window:1}")
     else
         windows_separators+=("<span foreground=\"${colors[$index_color]}\">[${workspace}]</span>${window:1}")
     fi
-    # if window has different workspace than previous, use next color. Cycle through colors
-    
-
     workspace_previous=$workspace
 done
 
 #echo ${windows_separators[@]}
 
 # Select window with rofi, obtaining ID of selected window
-selected=$(printf '%s\n' "${windows_separators[@]}" | rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -s -width 80 -lines 30 -markup-rows | awk '{print $NF}')
+idx_selected=$(printf '%s\n' "${windows_separators[@]}" | rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -s -width 80 -lines 30 -markup-rows)
+selected=${windows[$idx_selected]}
+id_selected=$(echo $selected | awk '{print $NF}')
+workspace_selected=${selected:0:1}
+
+
+### unmaximize all maximized windows on the workspace of the selected window
+# Obtain the avaliable windows' workspaces, names and IDs as strings
+mapfile -t ids_windows_maximized < <(
+swaymsg -t get_tree | jq -r '[
+    recurse(.nodes[]?)
+    |recurse(.floating_nodes[]?)
+    |select(.type=="workspace")
+    | . as $workspace | recurse(.nodes[]?)
+    |select(.type=="con" and .name!=null and .fullscreen_mode==1 and $workspace.name=="'"$workspace_selected"'")
+    |{workspace: $workspace.name, name: .name, id: .id, focused: .focused, app_id: .app_id}]
+    |sort_by(.workspace, .name)[]
+    |(.id|tostring)'
+)
+
+# unmaximize the maximized windows that are not the selected one
+for id_window_maximized in "${ids_windows_maximized[@]}"
+do 
+    if [ "$id_window_maximized" != "$id_selected" ]
+    then
+        swaymsg "[con_id=$id_window_maximized] fullscreen disable"
+    fi
+done
 
 # Tell sway to focus said window
 # todo: do not execute if selected is the separator
-if [ ! -z "$selected" ]
+if [ ! -z "$id_selected" ]
 then
-    swaymsg "[con_id=$selected] $command_"
+    swaymsg "[con_id=$id_selected] $command_"
 fi
