@@ -43,6 +43,37 @@ swaymsg -t get_tree | jq -r '[
     |.workspace + if .focused then "* " else "  " end + .app_id + " - " +  .name + "  " + (.id|tostring)'
 )
 
+
+# switch to last workspace and also get all windows in order to find out which one is the last focused
+# todo: add option to configure if this should be done or simply the active window should be selected.
+swaymsg workspace back_and_forth
+mapfile -t windows_previous < <(
+swaymsg -t get_tree | jq -r '[
+    recurse(.nodes[]?)
+    |recurse(.floating_nodes[]?)
+    |select(.type=="workspace")
+    | . as $workspace | recurse(.nodes[]?)
+    |select(.type=="con" and .name!=null)
+    |{workspace: $workspace.name, name: .name, id: .id, focused: .focused, app_id: .app_id}]
+    |sort_by(.workspace, .name)[]
+    |.workspace + if .focused then "* " else "  " end + .app_id + " - " +  .name + "  " + (.id|tostring)'
+)
+swaymsg workspace back_and_forth
+
+# Obtain window list index of active window
+index_window_last_actiqve=0
+for index_window in "${!windows_previous[@]}"
+do 
+    window="${windows_previous[$index_window]}"
+    # obtain index of the active window
+    if [ "${window:1:1}" == "*" ]
+    then 
+        index_window_last_active=$(($index_window))
+        break
+    fi
+done
+
+# get window list to display
 windows_separators=()
 colors=(blue green orange red magenta)
 workspace_previous=''
@@ -80,10 +111,9 @@ do
     workspace_previous=$workspace
 done
 
-#echo ${windows_separators[@]}
 
 # Select window with rofi, obtaining ID of selected window
-idx_selected=$(printf '%s\n' "${windows_separators[@]}" | rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -s -width 80 -lines 30 -markup-rows)
+idx_selected=$(printf '%s\n' "${windows_separators[@]}" | rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows)
 selected=${windows[$idx_selected]}
 id_selected=$(echo $selected | awk '{print $NF}')
 workspace_selected=${selected:0:1}
