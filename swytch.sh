@@ -30,6 +30,7 @@ else
     command_=$1
 fi
 
+
 # Obtain the avaliable windows' workspaces, names and IDs as strings
 mapfile -t windows < <(
 swaymsg -t get_tree | jq -r '[
@@ -46,25 +47,26 @@ swaymsg -t get_tree | jq -r '[
 
 # switch to last workspace and also get all windows in order to find out which one is the last focused
 # todo: add option to configure if this should be done or simply the active window should be selected.
-swaymsg workspace back_and_forth
-mapfile -t windows_previous < <(
-swaymsg -t get_tree | jq -r '[
-    recurse(.nodes[]?)
-    |recurse(.floating_nodes[]?)
-    |select(.type=="workspace")
-    | . as $workspace | recurse(.nodes[]?)
-    |select(.type=="con" and .name!=null)
-    |{workspace: $workspace.name, name: .name, id: .id, focused: .focused, app_id: .app_id}]
-    |sort_by(.workspace, .name)[]
-    |.workspace + if .focused then "* " else "  " end + .app_id + " - " +  .name + "  " + (.id|tostring)'
-)
-swaymsg workspace back_and_forth
+#swaymsg workspace back_and_forth
+#mapfile -t windows_previous < <(
+#swaymsg -t get_tree | jq -r '[
+#    recurse(.nodes[]?)
+#    |recurse(.floating_nodes[]?)
+#    |select(.type=="workspace")
+#    | . as $workspace | recurse(.nodes[]?)
+#    |select(.type=="con" and .name!=null)
+#    |{workspace: $workspace.name, name: .name, id: .id, focused: .focused, app_id: .app_id}]
+#    |sort_by(.workspace, .name)[]
+#    |.workspace + if .focused then "* " else "  " end + .app_id + " - " +  .name + "  " + (.id|tostring)'
+#)
+#swaymsg workspace back_and_forth
 
-# Obtain window list index of active window
-index_window_last_actiqve=0
-for index_window in "${!windows_previous[@]}"
+# Obtain window list index of last active window
+# todo
+index_window_last_active=0
+for index_window in "${!windows[@]}"
 do 
-    window="${windows_previous[$index_window]}"
+    window="${windows[$index_window]}"
     # obtain index of the active window
     if [ "${window:1:1}" == "*" ]
     then 
