@@ -113,9 +113,20 @@ do
     workspace_previous=$workspace
 done
 
+# Select window with rofi, obtaining ID of selected window
+screen_pos=$(swaymsg -t get_outputs \
+	| jq -r \
+	'.[] | select(.focused).rect | "\(.width)x\(.height)\\+\(.x)\\+\(.y)"')
+
+# ripgrep
+xwayland_output=$(xrandr | rg -oP "[A-Z]+[0-9]+(?= [a-z]+ $screen_pos)")
+
+monitor_id=$(rofi --help | rg $xwayland_output -B1 \
+	| sed -sr '/ID/!d;s/[^:]*:\s([0-9])/\1/')
+
 
 # Select window with rofi, obtaining ID of selected window
-idx_selected=$(printf '%s\n' "${windows_separators[@]}" | rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows)
+idx_selected=$(printf '%s\n' "${windows_separators[@]}" | rofi  -monitor $monitor_id -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows)
 # if no entry selected (e.g. user exitted with escape), end
 if [ -z "$idx_selected" ]
 then
