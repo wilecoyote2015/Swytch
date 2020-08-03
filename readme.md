@@ -6,7 +6,7 @@ The following programs are invoked:
 - rofi (https://github.com/davatorium/rofi)
 - jq (https://stedolan.github.io/jq/)
 - gawk (https://www.gnu.org/software/gawk/)
-- rigrep (https://github.com/BurntSushi/ripgrep)
+- ripgrep (https://github.com/BurntSushi/ripgrep)
 
 # Installation
 1. Install the programs listed above.
