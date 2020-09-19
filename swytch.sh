@@ -126,7 +126,13 @@ monitor_id=$(rofi --help | rg $xwayland_output -B1 \
 
 
 # Select window with rofi, obtaining ID of selected window
-idx_selected=$(printf '%s\n' "${windows_separators[@]}" | rofi  -monitor $monitor_id -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows)
+if [ -z "$monitor_id" ]
+then 
+	idx_selected=$(printf '%s\n' "${windows_separators[@]}" | rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows)
+else	
+	idx_selected=$(printf '%s\n' "${windows_separators[@]}" | rofi  -monitor $monitor_id -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows)
+fi
+ 
 # if no entry selected (e.g. user exitted with escape), end
 if [ -z "$idx_selected" ]
 then
