@@ -41,7 +41,7 @@ swaymsg -t get_tree | jq -r '[
     |select(.type=="con" and .name!=null)
     |{workspace: $workspace.name, name: .name, id: .id, focused: .focused, app_id: .app_id, class: .window_properties.class}]
     |sort_by(.workspace, .name)[]
-    |.workspace + if .focused then "* " else "  " end + .class + " - " +  .name + "  " + (.id|tostring)'
+    |.workspace + if .focused then "* " else "  " end + if .app_id then .app_id else .class end + " - " +  .name + "  " + (.id|tostring)'
 )
 
 
