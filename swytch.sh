@@ -44,23 +44,6 @@ swaymsg -t get_tree | jq -r '[
     |.workspace + if .focused then "* " else "  " end + if .app_id then .app_id else .class end + " - " +  .name + "  " + (.id|tostring)'
 )
 
-
-# switch to last workspace and also get all windows in order to find out which one is the last focused
-# todo: add option to configure if this should be done or simply the active window should be selected.
-#swaymsg workspace back_and_forth
-#mapfile -t windows_previous < <(
-#swaymsg -t get_tree | jq -r '[
-#    recurse(.nodes[]?)
-#    |recurse(.floating_nodes[]?)
-#    |select(.type=="workspace")
-#    | . as $workspace | recurse(.nodes[]?)
-#    |select(.type=="con" and .name!=null)
-#    |{workspace: $workspace.name, name: .name, id: .id, focused: .focused, app_id: .app_id}]
-#    |sort_by(.workspace, .name)[]
-#    |.workspace + if .focused then "* " else "  " end + .app_id + " - " +  .name + "  " + (.id|tostring)'
-#)
-#swaymsg workspace back_and_forth
-
 # Obtain window list index of last active window
 # todo
 index_window_last_active=0
@@ -113,6 +96,7 @@ do
     workspace_previous=$workspace
 done
 
+# TODO: this breaks when using i3. Comment out for now. Should only execute if running sway.
 # Select window with rofi, obtaining ID of selected window
 #screen_pos=$(swaymsg -t get_outputs \
 #	| jq -r \
