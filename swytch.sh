@@ -30,29 +30,80 @@ else
     command_=$1
 fi
 
-
+# TODO: is XDG_CURRENT_DESKTOP the appropriate variable?
+# TODO: style and DRY
+# TODO: Find a way to parse the json into array of dictionaries, so that the individual fields may be referred later.
+if [ "$XDG_CURRENT_DESKTOP" == "Sway" ] 
+then
 # Obtain the avaliable windows' workspaces, names and IDs as strings
-mapfile -t windows < <(
-swaymsg -t get_tree | jq -r '[
-    recurse(.nodes[]?)
-    |recurse(.floating_nodes[]?)
-    |select(.type=="workspace")
-    | . as $workspace | recurse(.nodes[]?)
-    |select(.type=="con" and .name!=null)
-    |{workspace: $workspace.name, name: .name, id: .id, focused: .focused, app_id: .app_id, class: .window_properties.class}]
-    |sort_by(.workspace, .name)[]
-    |.workspace + if .focused then "* " else "  " end + if .app_id then .app_id else .class end + " - " +  .name + "  " + (.id|tostring)'
-)
+	#mapfile -t windows < <(
+	# TODO: fix sway
+	function make_array_windows {
+	  	declare -A result=(
+    	$(swaymsg -t get_tree | jq -r '[
+    	    recurse(.nodes[]?)
+    	    |recurse(.floating_nodes[]?)
+    	    |select(.type=="workspace")
+    	    | . as $workspace | recurse(.nodes[]?)
+    	    |select(.type=="con" and .name!=null)
+    	    |sort_by($workspace.name, .name)[]
+    	    |."'"$1"
+    	))
+    	return result
+	}
+
+
+elif [ "$XDG_CURRENT_DESKTOP" == "Hyprland" ]
+then
+#  	function make_array_windows {
+#  	  	declare -A result=(
+#                          	$(hyprctl clients -j  | jq -r '[
+#                          	    sort_by(.workspace.name)[]
+#                          	    |'$1'
+#                          	    ]'
+#                          	))
+#        echo $result
+#  	}
+#  names=$(make_array_windows .class)
+#  echo $names
+#  names_workspaces=$(make_array_windows .workspace.name)
+#  echo $names
+  function make_array_windows {
+      # Read the JSON array into a variable
+      json=$(hyprctl clients -j)
+
+      # Extract the desired values using jq and save them in an array
+      declare -A result=($(echo "$json" | jq -r '[sort_by(.workspace.name)[] | '$1']'))
+
+      # Print the array elements (for debugging)
+#      printf '%s\n' "${result[@]}"
+
+      # Return the array
+      echo "${result}"
+  }
+
+  # Call the function and assign the result to the 'names' variable
+  mapfile -t res < <(echo "$json" | jq -r 'sort_by(.workspace.name)[] | .title')
+  echo $res
+
+  names=$(make_array_windows .title)
+  echo $names
+  classes=$(make_array_windows .class)
+  ids=$(make_array_windows .address)
+  workspaces=$(make_array_windows .workspace.name)
+  id_active=$(hyprctl activewindow -j | jq -r ".address")
+fi
+
 
 # Obtain window list index of last active window
 # todo
 index_window_last_active=0
-for index_window in "${!windows[@]}"
-do 
-    window="${windows[$index_window]}"
+for index_window in "${!ids[@]}"
+do
+    id="${ids[$index_window]}"
     # obtain index of the active window
-    if [ "${window:1:1}" == "*" ]
-    then 
+    if [ "${id}" == "${id_active}" ]
+    then
         index_window_last_active=$(($index_window))
         break
     fi
@@ -66,15 +117,15 @@ index_workspace_active=0
 num_separators=0
 index_color=0
 bold=-1
-for index_window in "${!windows[@]}"
+for index_window in "${!ids[@]}"
 do 
-    window="${windows[$index_window]}"
     # todo: consider arbitraty workspace name length by separating by space instead of simply taking first argument.
-    workspace=${window:0:1}
+    workspace=${workspaces[$index_window]}
+    window=${names[$index_window]}
     # obtain index of the active window
-    if [ "${window:1:1}" == "*" ]
+    if [ "${ids[$index_window]}" == "${id_active}" ]
     then 
-        index_workspace_active=$(($index_window))
+        index_workspace_active=$(($workspaces[index_window]))
     fi
     
     # if window has different workspace than previous, use next color. Cycle through colors
@@ -87,11 +138,13 @@ do
     then	
         index_color=0
     fi
-    if (( $bold == 1)) 
+    if (( $bold == 1))
+    # TODO: add classname in column
     then
-        windows_separators+=("<b><span foreground=\"${colors[$index_color]}\">[${workspace}]</span>${window:1}</b>")
+        windows_separators+=("<b><span foreground=\"${colors[$index_color]}\">[${window[workspace]}]</span>${window:1}</b>")
     else
-        windows_separators+=("<span foreground=\"${colors[$index_color]}\">[${workspace}]</span>${window:1}")
+    	windows_separators+=("${window}")
+        #windows_separators+=("<span foreground=\"${colors[$index_color]}\">[${window[workspace]}]</span>${window:1}")
     fi
     workspace_previous=$workspace
 done
