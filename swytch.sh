@@ -118,39 +118,77 @@ do
 #    echo $title
 #    echo $id
 
+
     # obtain index of the active window
     if [ "${ids[$index_window]}" == "${id_active}" ]
     then 
         index_workspace_active=$(($workspace))
     fi
-    
+
+    window=("$workspace^$class^$title")
+    windows_separators+=("${window}")
+#    windows_separators+=($"${window}\n")
+    # TODO: commented out for testing...
+
+#    if (( $bold == 1))
+#
+#    # TODO: add classname in column
+#    # TODO: foratting after column spacing!
+#    then
+#        windows_separators+=("<b><span foreground=\"${colors[$index_color]}\">${window}</span></b>")
+#    else
+#    	windows_separators+=("${window}")
+#        #windows_separators+=("<span foreground=\"${colors[$index_color]}\">[${window[workspace]}]</span>${window:1}")
+#    fi
+done
+
+# FIXME: active window display does not work correctly!!
+
+## column spacing
+#windows_separators_spaced=$(printf '%s\n' "${windows_separators[@]}" | column -s^ -t)
+#readarray -t windows_separators_spaced <<< (printf '%s\n' "${windows_separators[@]}" | column -s^ -t)
+mapfile -t windows_separators_spaced < <(printf '%s\n' "${windows_separators[@]}" | column -s^ -t)
+
+windows_separators_formatted=()
+for index_window in "${!ids[@]}"
+do
+    # todo: consider arbitraty workspace name length by separating by space instead of simply taking first argument.
+    window=${windows_separators_spaced[$index_window]}
+    workspace=${workspaces[$index_window]}
+
+#    echo $window
+
     # if window has different workspace than previous, use next color. Cycle through colors
     if [ "$workspace" != "$workspace_previous" ] && [ ! -z "$workspace_previous" ]
     then
         index_color=$index_color+1
     fi
-    
+
     if (($index_color == ${#colors[@]}))
-    then	
+    then
         index_color=0
     fi
-
-    window=("$workspace $class $title")
-
-#    windows_separators+=($"${window}\n")
-    # TODO: commented out for testing...
 
     if (( $bold == 1))
 
     # TODO: add classname in column
+    # TODO: foratting after column spacing!
     then
-        windows_separators+=("<b><span foreground=\"${colors[$index_color]}\">${window}</span></b>")
+        window_formatted=("<b><span foreground=\"${colors[$index_color]}\">${window}</span></b>")
     else
-    	windows_separators+=("${window}")
+    	  window_formatted=("${window}")
         #windows_separators+=("<span foreground=\"${colors[$index_color]}\">[${window[workspace]}]</span>${window:1}")
     fi
+    echo $window_formatted
+    windows_separators_formatted+=("${window_formatted}")
     workspace_previous=$workspace
 done
+
+# TODO: make focus on window active
+
+#  Formatting
+
+## columns
 
 # TODO: this breaks when using i3. Comment out for now. Should only execute if running sway.
 # Select window with rofi, obtaining ID of selected window
@@ -172,9 +210,9 @@ done
 
 if [ -z "$monitor_id" ]
 then 
-	idx_selected=$(printf '%s\n' "${windows_separators[@]}" | rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows)
+	idx_selected=$(printf '%s\n' "${windows_separators_formatted[@]}" |  rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows )
 else	
-	idx_selected=$(printf '%s\n' "${windows_separators[@]}" | rofi  -monitor $monitor_id -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows)
+	idx_selected=$(printf '%s\n' "${windows_separators_formatted[@]}" |  rofi  -monitor $monitor_id -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows  )
 fi
 
 # if no entry selected (e.g. user exitted with escape), end
