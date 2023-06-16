@@ -55,43 +55,31 @@ then
 
 elif [ "$XDG_CURRENT_DESKTOP" == "Hyprland" ]
 then
-#  	function make_array_windows {
-#  	  	declare -A result=(
-#                          	$(hyprctl clients -j  | jq -r '[
-#                          	    sort_by(.workspace.name)[]
-#                          	    |'$1'
-#                          	    ]'
-#                          	))
-#        echo $result
-#  	}
-#  names=$(make_array_windows .class)
-#  echo $names
-#  names_workspaces=$(make_array_windows .workspace.name)
-#  echo $names
-  function make_array_windows {
-      # Read the JSON array into a variable
-      json=$(hyprctl clients -j)
-
-      # Extract the desired values using jq and save them in an array
-      declare -A result=($(echo "$json" | jq -r '[sort_by(.workspace.name)[] | '$1']'))
-
-      # Print the array elements (for debugging)
+  # TODO: how to return array from function?
+#  function make_array_windows {
+#      # Read the JSON array into a variable
+#      json=$(hyprctl clients -j)
+#
+#      # Extract the desired values using jq and save them in an array
+#      mapfile -t result < <(echo "$json" | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | '$1'')
+#
+#      # Print the array elements (for debugging)
 #      printf '%s\n' "${result[@]}"
+#  }
 
-      # Return the array
-      echo "${result}"
-  }
-
-  # Call the function and assign the result to the 'names' variable
-  mapfile -t res < <(echo "$json" | jq -r 'sort_by(.workspace.name)[] | .title')
-  echo $res
-
-  names=$(make_array_windows .title)
-  echo $names
-  classes=$(make_array_windows .class)
-  ids=$(make_array_windows .address)
-  workspaces=$(make_array_windows .workspace.name)
+#  names=$(make_array_windows .title)
+##  echo $names
+##  printf '%s\n' "${names[@]}"
+#  classes=$(make_array_windows .class)
+#  ids=$(make_array_windows .address)
+#  workspaces=$(make_array_windows .workspace.name)
   id_active=$(hyprctl activewindow -j | jq -r ".address")
+
+  mapfile -t names < <(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .title')
+  mapfile -t classes < <(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .class')
+  mapfile -t ids < <(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .address')
+  mapfile -t workspaces < <(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .workspace.name')
+
 fi
 
 
@@ -116,16 +104,24 @@ workspace_previous=''
 index_workspace_active=0
 num_separators=0
 index_color=0
-bold=-1
+bold=1
 for index_window in "${!ids[@]}"
 do 
     # todo: consider arbitraty workspace name length by separating by space instead of simply taking first argument.
     workspace=${workspaces[$index_window]}
-    window=${names[$index_window]}
+    title=${names[$index_window]}
+    class=${classes[$index_window]}
+    id=${ids[$index_window]}
+#    class=${class//$'\n'/}
+#    title=${title//$'\n'/}
+#    workspace=${workspace//$'\n'/}
+#    echo $title
+#    echo $id
+
     # obtain index of the active window
     if [ "${ids[$index_window]}" == "${id_active}" ]
     then 
-        index_workspace_active=$(($workspaces[index_window]))
+        index_workspace_active=$(($workspace))
     fi
     
     # if window has different workspace than previous, use next color. Cycle through colors
@@ -138,10 +134,17 @@ do
     then	
         index_color=0
     fi
+
+    window=("$workspace $class $title")
+
+#    windows_separators+=($"${window}\n")
+    # TODO: commented out for testing...
+
     if (( $bold == 1))
+
     # TODO: add classname in column
     then
-        windows_separators+=("<b><span foreground=\"${colors[$index_color]}\">[${window[workspace]}]</span>${window:1}</b>")
+        windows_separators+=("<b><span foreground=\"${colors[$index_color]}\">${window}</span></b>")
     else
     	windows_separators+=("${window}")
         #windows_separators+=("<span foreground=\"${colors[$index_color]}\">[${window[workspace]}]</span>${window:1}")
@@ -179,36 +182,47 @@ if [ -z "$idx_selected" ]
 then
     exit 1
 fi
-selected=${windows[$idx_selected]}
-id_selected=$(echo $selected | awk '{print $NF}')
-workspace_selected=${selected:0:1}
+id_selected=${ids[$idx_selected]}
+workspace_selected=${workspaces[$idx_selected]}
 
 
-### unmaximize all maximized windows on the workspace of the selected window
-# Obtain the avaliable windows' workspaces, names and IDs as strings
-mapfile -t ids_windows_maximized < <(
-swaymsg -t get_tree | jq -r '[
-    recurse(.nodes[]?)
-    |recurse(.floating_nodes[]?)
-    |select(.type=="workspace")
-    | . as $workspace | recurse(.nodes[]?)
-    |select(.type=="con" and .name!=null and .fullscreen_mode==1 and $workspace.name=="'"$workspace_selected"'")
-    |{workspace: $workspace.name, name: .name, id: .id, focused: .focused, app_id: .app_id}]
-    |sort_by(.workspace, .name)[]
-    |(.id|tostring)'
-)
+if [ "$XDG_CURRENT_DESKTOP" == "Sway" ]
+  then
+  ### unmaximize all maximized windows on the workspace of the selected window
+  # Obtain the avaliable windows' workspaces, names and IDs as strings
+  # TODO: FIX this for current code!
+  mapfile -t ids_windows_maximized < <(
+  swaymsg -t get_tree | jq -r '[
+      recurse(.nodes[]?)
+      |recurse(.floating_nodes[]?)
+      |select(.type=="workspace")
+      | . as $workspace | recurse(.nodes[]?)
+      |select(.type=="con" and .name!=null and .fullscreen_mode==1 and $workspace.name=="'"$workspace_selected"'")
+      |{workspace: $workspace.name, name: .name, id: .id, focused: .focused, app_id: .app_id}]
+      |sort_by(.workspace, .name)[]
+      |(.id|tostring)'
+  )
 
-# unmaximize the maximized windows that are not the selected one
-for id_window_maximized in "${ids_windows_maximized[@]}"
-do 
-    if [ "$id_window_maximized" != "$id_selected" ]
-    then
-        swaymsg "[con_id=$id_window_maximized] fullscreen disable"
-    fi
-done
+  # unmaximize the maximized windows that are not the selected one
+  for id_window_maximized in "${ids_windows_maximized[@]}"
+  do
+      if [ "$id_window_maximized" != "$id_selected" ]
+      then
+          swaymsg "[con_id=$id_window_maximized] fullscreen disable"
+      fi
+  done
 
-# Tell sway to focus said window
-if [ ! -z "$id_selected" ]
+  # Tell sway to focus said window
+  if [ ! -z "$id_selected" ]
+  then
+      swaymsg "[con_id=$id_selected] $command_"
+  fi
+elif [ "$XDG_CURRENT_DESKTOP" == "Hyprland" ]
+
 then
-    swaymsg "[con_id=$id_selected] $command_"
+  # TODO: also handle maximized windows?
+  hyprctl dispatch focuswindow address:$id_selected
 fi
+
+
+
