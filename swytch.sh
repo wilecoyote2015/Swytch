@@ -75,10 +75,11 @@ then
 #  workspaces=$(make_array_windows .workspace.name)
   id_active=$(hyprctl activewindow -j | jq -r ".address")
 
-  mapfile -t names < <(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .title')
-  mapfile -t classes < <(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .class')
-  mapfile -t ids < <(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .address')
-  mapfile -t workspaces < <(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .workspace.name')
+  json=$(hyprctl clients -j)
+  mapfile -t names < <(echo "$json"  | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .title')
+  mapfile -t classes < <(echo "$json"  | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .class')
+  mapfile -t ids < <(echo "$json"  | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .address')
+  mapfile -t workspaces < <(echo "$json"  | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .workspace.name')
 
 fi
 
@@ -109,7 +110,6 @@ do
     then
         index_window_last_active=("${index_window}")
     fi
-    echo $index_window_last_active
 
     # obtain index of the active window
     if [ "${id}" == "${id_active}" ]
@@ -171,7 +171,6 @@ do
     	  window_formatted=("${window}")
         #windows_separators+=("<span foreground=\"${colors[$index_color]}\">[${window[workspace]}]</span>${window:1}")
     fi
-    echo $window_formatted
     windows_separators_formatted+=("${window_formatted}")
     workspace_previous=$workspace
 done
