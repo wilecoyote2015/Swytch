@@ -83,25 +83,12 @@ then
 fi
 
 
-# Obtain window list index of last active window
-# todo
-index_window_last_active=0
-for index_window in "${!ids[@]}"
-do
-    id="${ids[$index_window]}"
-    # obtain index of the active window
-    if [ "${id}" == "${id_active}" ]
-    then
-        index_window_last_active=$(($index_window))
-        break
-    fi
-done
-
 # get window list to display
 windows_separators=()
 colors=(blue green orange red magenta)
 workspace_previous=''
 index_workspace_active=0
+index_window_last_active=0
 num_separators=0
 index_color=0
 bold=1
@@ -118,9 +105,14 @@ do
 #    echo $title
 #    echo $id
 
+    if [ "${id}" == "${id_active}" ]
+    then
+        index_window_last_active=("${index_window}")
+    fi
+    echo $index_window_last_active
 
     # obtain index of the active window
-    if [ "${ids[$index_window]}" == "${id_active}" ]
+    if [ "${id}" == "${id_active}" ]
     then 
         index_workspace_active=$(($workspace))
     fi
