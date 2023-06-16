@@ -32,8 +32,7 @@ fi
 
 # TODO: is XDG_CURRENT_DESKTOP the appropriate variable?
 # TODO: style and DRY
-# TODO: Find a way to parse the json into array of dictionaries, so that the individual fields may be referred later.
-if [ "$XDG_CURRENT_DESKTOP" == "Sway" ] 
+if [ "$XDG_CURRENT_DESKTOP" == "Sway" ]
 then
 # Obtain the avaliable windows' workspaces, names and IDs as strings
 	#mapfile -t windows < <(
@@ -52,7 +51,6 @@ then
     	return result
 	}
 
-
 elif [ "$XDG_CURRENT_DESKTOP" == "Hyprland" ]
 then
   # TODO: how to return array from function?
@@ -67,14 +65,9 @@ then
 #      printf '%s\n' "${result[@]}"
 #  }
 
-#  names=$(make_array_windows .title)
-##  echo $names
-##  printf '%s\n' "${names[@]}"
-#  classes=$(make_array_windows .class)
-#  ids=$(make_array_windows .address)
-#  workspaces=$(make_array_windows .workspace.name)
   id_active=$(hyprctl activewindow -j | jq -r ".address")
 
+  # TODO: instead of calling jq for each variable, build some array of dicts
   json=$(hyprctl clients -j)
   mapfile -t names < <(echo "$json"  | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .title')
   mapfile -t classes < <(echo "$json"  | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .class')
@@ -100,11 +93,6 @@ do
     title=${names[$index_window]}
     class=${classes[$index_window]}
     id=${ids[$index_window]}
-#    class=${class//$'\n'/}
-#    title=${title//$'\n'/}
-#    workspace=${workspace//$'\n'/}
-#    echo $title
-#    echo $id
 
     if [ "${id}" == "${id_active}" ]
     then
@@ -119,26 +107,11 @@ do
 
     window=("$workspace^$class^$title")
     windows_separators+=("${window}")
-#    windows_separators+=($"${window}\n")
-    # TODO: commented out for testing...
-
-#    if (( $bold == 1))
-#
-#    # TODO: add classname in column
-#    # TODO: foratting after column spacing!
-#    then
-#        windows_separators+=("<b><span foreground=\"${colors[$index_color]}\">${window}</span></b>")
-#    else
-#    	windows_separators+=("${window}")
-#        #windows_separators+=("<span foreground=\"${colors[$index_color]}\">[${window[workspace]}]</span>${window:1}")
-#    fi
 done
 
 # FIXME: active window display does not work correctly!!
 
 ## column spacing
-#windows_separators_spaced=$(printf '%s\n' "${windows_separators[@]}" | column -s^ -t)
-#readarray -t windows_separators_spaced <<< (printf '%s\n' "${windows_separators[@]}" | column -s^ -t)
 mapfile -t windows_separators_spaced < <(printf '%s\n' "${windows_separators[@]}" | column -s^ -t)
 
 windows_separators_formatted=()
@@ -147,8 +120,6 @@ do
     # todo: consider arbitraty workspace name length by separating by space instead of simply taking first argument.
     window=${windows_separators_spaced[$index_window]}
     workspace=${workspaces[$index_window]}
-
-#    echo $window
 
     # if window has different workspace than previous, use next color. Cycle through colors
     if [ "$workspace" != "$workspace_previous" ] && [ ! -z "$workspace_previous" ]
@@ -163,41 +134,14 @@ do
 
     if (( $bold == 1))
 
-    # TODO: add classname in column
-    # TODO: foratting after column spacing!
     then
         window_formatted=("<b><span foreground=\"${colors[$index_color]}\">${window}</span></b>")
     else
     	  window_formatted=("${window}")
-        #windows_separators+=("<span foreground=\"${colors[$index_color]}\">[${window[workspace]}]</span>${window:1}")
     fi
     windows_separators_formatted+=("${window_formatted}")
     workspace_previous=$workspace
 done
-
-# TODO: make focus on window active
-
-#  Formatting
-
-## columns
-
-# TODO: this breaks when using i3. Comment out for now. Should only execute if running sway.
-# Select window with rofi, obtaining ID of selected window
-#screen_pos=$(swaymsg -t get_outputs \
-#	| jq -r \
-#	'.[] | select(.focused).rect | "\(.width)x\(.height)\\+\(.x)\\+\(.y)"')
-
-# ripgrep
-#xwayland_output=$(xrandr | rg -oP "[A-Z]+[0-9]+(?= [a-z]+ $screen_pos)")
-
-#monitor_id=$(rofi --help | rg $xwayland_output -B1 \
-#	| sed -sr '/ID/!d;s/[^:]*:\s([0-9])/\1/')
-
-
-# Select window with rofi, obtaining ID of selected window
-# TODO: Use multiple columns while inserting appropriate empty lines
-#	and adjusting line number accordingly in order to visually
-#	separate the list by workspace
 
 if [ -z "$monitor_id" ]
 then 
