@@ -22,6 +22,12 @@
 # todo: first, query all existing workspaces from sway and build color dict, so that
 #   all workspaces always get the same color, even if no windows at some workspace in between exists.
 
+# TODO: fix display of window titles that have any escape characters
+# TODO: performance
+# TODO: make icons optional for performance
+
+# TODO: handle custom icons from .desktop files
+
 # obtain command to execute with swaymsg for selected window
 if [ -z "$1" ]
 then 
@@ -105,14 +111,16 @@ do
         index_workspace_active=$(($workspace))
     fi
 
-    window=("$workspace^$class^$title")
+    window=("$workspace£$class£$title")
     windows_separators+=("${window}")
 done
 
-# FIXME: active window display does not work correctly!!
-
 ## column spacing
-mapfile -t windows_separators_spaced < <(printf '%s\n' "${windows_separators[@]}" | column -s^ -t)
+# FIXME: does not work for anymore with icons for some reson. columns are identified correctly
+# TODO: different separator. find out how to use multi-character separator in column
+mapfile -t windows_separators_spaced < <(printf '%s\n' "${windows_separators[@]}" | column -s "£" -t)
+bb=$(printf '%s\n' "${windows_separators[@]}" | column -s "£" -t -o "col" )
+echo $bb
 
 windows_separators_formatted=()
 for index_window in "${!ids[@]}"
@@ -120,6 +128,7 @@ do
     # todo: consider arbitraty workspace name length by separating by space instead of simply taking first argument.
     window=${windows_separators_spaced[$index_window]}
     workspace=${workspaces[$index_window]}
+    class=${classes[$index_window]}
 
     # if window has different workspace than previous, use next color. Cycle through colors
     if [ "$workspace" != "$workspace_previous" ] && [ ! -z "$workspace_previous" ]
@@ -134,28 +143,29 @@ do
 
     if (( $bold == 1))
 
+#    echo ${windows_separators_spaced[$index_window]}
+
     then
         window_formatted=("<b><span foreground=\"${colors[$index_color]}\">${window}</span></b>")
     else
     	  window_formatted=("${window}")
     fi
-#    icon=$(echo -e "aap\0icon\x1ffirefox\n")
-    icon="\0icon\x1ffirefox\n"
+
+    icon=$(grep -E -ir ${class} /usr/share/applications/*.desktop ${HOME}/.local/share/applications/*.desktop | grep -oP '(?<=Icon=).*' | head -1)
+
+    icon="\0icon\x1f${icon}\n"
     window_formatted_w_icon="${window_formatted}${icon}"
     windows_separators_formatted+=("${window_formatted_w_icon}")
     workspace_previous=$workspace
 done
 
-
-
+#unset 'windows_separators_formatted[-1]'
 windows_formatted_str=$(printf '%s' "${windows_separators_formatted[@]}")
-echo $windows_formatted
 
 if [ -z "$monitor_id" ]
 then
 	idx_selected=$(echo -en $windows_formatted_str |  rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows -show-icons )
 else
-  echo sdfdasf
 	idx_selected=$(echo -en $windows_formatted_str |  rofi  -monitor $monitor_id -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows -show-icons )
 fi
 
