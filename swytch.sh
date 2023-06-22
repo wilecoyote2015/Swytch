@@ -139,15 +139,24 @@ do
     else
     	  window_formatted=("${window}")
     fi
-    windows_separators_formatted+=("${window_formatted}")
+#    icon=$(echo -e "aap\0icon\x1ffirefox\n")
+    icon="\0icon\x1ffirefox\n"
+    window_formatted_w_icon="${window_formatted}${icon}"
+    windows_separators_formatted+=("${window_formatted_w_icon}")
     workspace_previous=$workspace
 done
 
+
+
+windows_formatted_str=$(printf '%s' "${windows_separators_formatted[@]}")
+echo $windows_formatted
+
 if [ -z "$monitor_id" ]
-then 
-	idx_selected=$(printf '%s\n' "${windows_separators_formatted[@]}" |  rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows )
-else	
-	idx_selected=$(printf '%s\n' "${windows_separators_formatted[@]}" |  rofi  -monitor $monitor_id -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows  )
+then
+	idx_selected=$(echo -en $windows_formatted_str |  rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows -show-icons )
+else
+  echo sdfdasf
+	idx_selected=$(echo -en $windows_formatted_str |  rofi  -monitor $monitor_id -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows -show-icons )
 fi
 
 # if no entry selected (e.g. user exitted with escape), end
