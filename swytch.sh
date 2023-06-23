@@ -27,7 +27,6 @@
 # TODO: make icons optional for performance
 
 # TODO: handle custom icons from .desktop files
-
 # obtain command to execute with swaymsg for selected window
 if [ -z "$1" ]
 then 
@@ -119,10 +118,11 @@ done
 # FIXME: does not work for anymore with icons for some reson. columns are identified correctly
 # TODO: different separator. find out how to use multi-character separator in column
 mapfile -t windows_separators_spaced < <(printf '%s\n' "${windows_separators[@]}" | column -s "£" -t)
-bb=$(printf '%s\n' "${windows_separators[@]}" | column -s "£" -t -o "col" )
-echo $bb
+#bb=$(printf '%s\n' "${windows_separators[@]}" | column -s "£" -t -o "col" )
+#echo $bb
 
 windows_separators_formatted=()
+
 for index_window in "${!ids[@]}"
 do
     # todo: consider arbitraty workspace name length by separating by space instead of simply taking first argument.
@@ -151,7 +151,8 @@ do
     	  window_formatted=("${window}")
     fi
 
-    icon=$(grep -E -ir ${class} /usr/share/applications/*.desktop ${HOME}/.local/share/applications/*.desktop | grep -oP '(?<=Icon=).*' | head -1)
+#    icon=$(grep -E -ir ${class} /usr/share/applications/*.desktop ${HOME}/.local/share/applications/*.desktop | grep -oP '(?<=Icon=).*' | head -1)
+    icon=$(find /usr/share/applications ${HOME}/.local/share/applications/ -name "*${class}.desktop" -exec grep -oP '(?<=Icon=).*' {} \; | head -1)
 
     icon="\0icon\x1f${icon}\n"
     window_formatted_w_icon="${window_formatted}${icon}"
