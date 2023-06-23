@@ -68,24 +68,23 @@ then
 #      # Print the array elements (for debugging)
 #      printf '%s\n' "${result[@]}"
 #  }
+#  start_time=$(date +%s.%3N)
 
   id_active=$(hyprctl activewindow -j | jq -r ".address")
 
   # TODO: instead of calling jq for each variable, build some array of dicts
-  start_time=$(date +%s.%3N)
   json=$(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1)')
   mapfile -t names < <(echo "$json"  | jq -r '.title')
   mapfile -t classes < <(echo "$json"  | jq -r '.class')
   mapfile -t ids < <(echo "$json"  | jq -r '.address')
   mapfile -t workspaces < <(echo "$json"  | jq -r '.workspace.name')
-  end_time=$(date +%s.%3N)
 
-  elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
-  echo time get windows: $elapsed
+#  end_time=$(date +%s.%3N)
+#
+#  elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
+#  echo time get windows: $elapsed
 
 fi
-echo c
-
 
 # get window list to display
 windows_separators=()
@@ -97,7 +96,7 @@ num_separators=0
 index_color=0
 bold=1
 
-start_time=$(date +%s.%3N)
+#start_time=$(date +%s.%3N)
 
 for index_window in "${!ids[@]}"
 do 
@@ -122,26 +121,25 @@ do
     windows_separators+=("${window}")
 done
 
-end_time=$(date +%s.%3N)
-elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
-echo time make array windows with separator: $elapsed
+#end_time=$(date +%s.%3N)
+#elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
+#echo time make array windows with separator: $elapsed
 
 ## column spacing
 # FIXME: does not work for anymore with icons for some reson. columns are identified correctly
 # TODO: different separator. find out how to use multi-character separator in column
-start_time=$(date +%s.%3N)
+#start_time=$(date +%s.%3N)
 
 mapfile -t windows_separators_spaced < <(printf '%s\n' "${windows_separators[@]}" | column -s "£" -t)
-end_time=$(date +%s.%3N)
-elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
-echo time make windows with columns: $elapsed
+#end_time=$(date +%s.%3N)
+#elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
+#echo time make windows with columns: $elapsed
 #bb=$(printf '%s\n' "${windows_separators[@]}" | column -s "£" -t -o "col" )
 #echo $bb
 
 windows_separators_formatted=()
 
-start_time=$(date +%s.%3N)
-
+#start_time=$(date +%s.%3N)
 
 for index_window in "${!ids[@]}"
 do
@@ -188,17 +186,17 @@ do
     workspace_previous=$workspace
 done
 
-end_time=$(date +%s.%3N)
-elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
-echo time make array windows formatted: $elapsed
+#end_time=$(date +%s.%3N)
+#elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
+#echo time make array windows formatted: $elapsed
 
 #unset 'windows_separators_formatted[-1]'
-start_time=$(date +%s.%3N)
+#start_time=$(date +%s.%3N)
 
 windows_formatted_str=$(printf '%s' "${windows_separators_formatted[@]}")
-end_time=$(date +%s.%3N)
-elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
-echo time make windows_formatted_str: $elapsed
+#end_time=$(date +%s.%3N)
+#elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
+#echo time make windows_formatted_str: $elapsed
 
 if [ -z "$monitor_id" ]
 then
