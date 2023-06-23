@@ -72,13 +72,19 @@ then
   id_active=$(hyprctl activewindow -j | jq -r ".address")
 
   # TODO: instead of calling jq for each variable, build some array of dicts
-  json=$(hyprctl clients -j)
-  mapfile -t names < <(echo "$json"  | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .title')
-  mapfile -t classes < <(echo "$json"  | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .class')
-  mapfile -t ids < <(echo "$json"  | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .address')
-  mapfile -t workspaces < <(echo "$json"  | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | .workspace.name')
+  start_time=$(date +%s.%3N)
+  json=$(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1)')
+  mapfile -t names < <(echo "$json"  | jq -r '.title')
+  mapfile -t classes < <(echo "$json"  | jq -r '.class')
+  mapfile -t ids < <(echo "$json"  | jq -r '.address')
+  mapfile -t workspaces < <(echo "$json"  | jq -r '.workspace.name')
+  end_time=$(date +%s.%3N)
+
+  elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
+  echo time get windows: $elapsed
 
 fi
+echo c
 
 
 # get window list to display
