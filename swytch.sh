@@ -22,11 +22,10 @@
 # todo: first, query all existing workspaces from sway and build color dict, so that
 #   all workspaces always get the same color, even if no windows at some workspace in between exists.
 
-# TODO: fix display of window titles that have any escape characters
+# TODO: fix display of window titles that have any escape characterspp
 # TODO: performance
 # TODO: make icons optional for performance
 
-# TODO: handle custom icons from .desktop files
 # obtain command to execute with swaymsg for selected window
 if [ -z "$1" ]
 then 
@@ -91,6 +90,9 @@ index_window_last_active=0
 num_separators=0
 index_color=0
 bold=1
+
+start_time=$(date +%s.%3N)
+
 for index_window in "${!ids[@]}"
 do 
     # todo: consider arbitraty workspace name length by separating by space instead of simply taking first argument.
@@ -114,14 +116,26 @@ do
     windows_separators+=("${window}")
 done
 
+end_time=$(date +%s.%3N)
+elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
+echo time make array windows with separator: $elapsed
+
 ## column spacing
 # FIXME: does not work for anymore with icons for some reson. columns are identified correctly
 # TODO: different separator. find out how to use multi-character separator in column
+start_time=$(date +%s.%3N)
+
 mapfile -t windows_separators_spaced < <(printf '%s\n' "${windows_separators[@]}" | column -s "£" -t)
+end_time=$(date +%s.%3N)
+elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
+echo time make windows with columns: $elapsed
 #bb=$(printf '%s\n' "${windows_separators[@]}" | column -s "£" -t -o "col" )
 #echo $bb
 
 windows_separators_formatted=()
+
+start_time=$(date +%s.%3N)
+
 
 for index_window in "${!ids[@]}"
 do
@@ -151,7 +165,11 @@ do
     	  window_formatted=("${window}")
     fi
 
+#    echo $window
+#    echo $window_formatted
+
 #    icon=$(grep -E -ir ${class} /usr/share/applications/*.desktop ${HOME}/.local/share/applications/*.desktop | grep -oP '(?<=Icon=).*' | head -1)
+    # try to find icon by desktop name and class
     icon=$(find /usr/share/applications ${HOME}/.local/share/applications/ -name "*${class}.desktop" -exec grep -oP '(?<=Icon=).*' {} \; | head -1)
 
     icon="\0icon\x1f${icon}\n"
@@ -160,8 +178,17 @@ do
     workspace_previous=$workspace
 done
 
+end_time=$(date +%s.%3N)
+elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
+echo time make array windows formatted: $elapsed
+
 #unset 'windows_separators_formatted[-1]'
+start_time=$(date +%s.%3N)
+
 windows_formatted_str=$(printf '%s' "${windows_separators_formatted[@]}")
+end_time=$(date +%s.%3N)
+elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
+echo time make windows_formatted_str: $elapsed
 
 if [ -z "$monitor_id" ]
 then
