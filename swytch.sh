@@ -171,6 +171,10 @@ do
 #    icon=$(grep -E -ir ${class} /usr/share/applications/*.desktop ${HOME}/.local/share/applications/*.desktop | grep -oP '(?<=Icon=).*' | head -1)
     # try to find icon by desktop name and class
     icon=$(find /usr/share/applications ${HOME}/.local/share/applications/ -name "*${class}.desktop" -exec grep -oP '(?<=Icon=).*' {} \; | head -1)
+    if [ -z "$icon" ]
+    then
+        icon=$(grep -ir StartupWMClass=${class} /usr/share/applications/*.desktop ${HOME}/.local/share/applications/*.desktop -l | xargs grep -oP '(?<=Icon=).*' | head -1)
+    fi
 
     icon="\0icon\x1f${icon}\n"
     window_formatted_w_icon="${window_formatted}${icon}"
