@@ -153,6 +153,9 @@ windows_separators_formatted=()
 
 start_time=$(date +%s.%3N)
 
+# store icons to avoid searching icons for known applications
+declare -A icons
+
 for index_window in "${!ids[@]}"
 do
     # todo: consider arbitraty workspace name length by separating by space instead of simply taking first argument.
@@ -178,11 +181,16 @@ do
     	  window_formatted=("${window}")
     fi
 
-    # try to find icon by desktop name and class
-    icon=$(find /usr/share/applications ${HOME}/.local/share/applications/ -name "*${class}.desktop" -exec grep -oP '(?<=Icon=).*' {} \; | head -1)
-    if [ -z "$icon" ]
-    then
-        icon=$(grep -ir StartupWMClass=${class} /usr/share/applications/*.desktop ${HOME}/.local/share/applications/*.desktop -l | xargs grep -oP '(?<=Icon=).*' | head -1)
+    if [[ ${icons[$class]+exists} ]]; then
+      icon=$icons[$class]
+    else
+      # try to find icon by desktop name and class
+      icon=$(find /usr/share/applications ${HOME}/.local/share/applications/ -name "*${class}.desktop" -exec grep -oP '(?<=Icon=).*' {} \; | head -1)
+      if [ -z "$icon" ]
+      then
+          icon=$(grep -ir StartupWMClass=${class} /usr/share/applications/*.desktop ${HOME}/.local/share/applications/*.desktop -l | xargs grep -oP '(?<=Icon=).*' | head -1)
+      fi
+      icons[$class]=$icon
     fi
 
     icon="\0icon\x1f${icon}\n"
