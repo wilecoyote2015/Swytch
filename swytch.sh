@@ -24,7 +24,6 @@
 #   remark: not possible at least for hyprland, because hyprctl workspace only return actually used workspaces
 #   and not all workspaces that are defined in config
 
-# TODO: fix display of window titles that have any escape characters
 # TODO: performance
 # TODO: make icons optional for performance
 
@@ -127,9 +126,18 @@ do
     fi
 
     window=("$workspace£$class£$title")
+
+    # escape problematic characters
+    # for now, simply delete them.
+    # TODO: escape
+    # TODO: add all possible problematic characters
+      window=$(echo "$window" | tr -d '%&')
+#      has_char=$(echo "$window" | grep '&')
+#    window=$(echo "$window" | sed 's/h//g')
+
     windows_separators+=("${window}")
 done
-
+#
 #end_time=$(date +%s.%3N)
 #elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
 #echo time make array windows with separator: $elapsed
@@ -143,7 +151,7 @@ mapfile -t windows_separators_spaced < <(printf '%s\n' "${windows_separators[@]}
 
 windows_separators_formatted=()
 
-#start_time=$(date +%s.%3N)
+start_time=$(date +%s.%3N)
 
 for index_window in "${!ids[@]}"
 do
@@ -183,9 +191,9 @@ do
     workspace_previous=$workspace
 done
 
-#end_time=$(date +%s.%3N)
-#elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
-#echo time make array windows formatted: $elapsed
+end_time=$(date +%s.%3N)
+elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
+echo time make array windows formatted: $elapsed
 
 if [ -z "$monitor_id" ]
 then
