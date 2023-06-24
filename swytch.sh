@@ -74,10 +74,16 @@ then
 
   # TODO: instead of calling jq for each variable, build some array of dicts
   json=$(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1)')
-  mapfile -t names < <(echo "$json"  | jq -r '.title')
-  mapfile -t classes < <(echo "$json"  | jq -r '.class')
-  mapfile -t ids < <(echo "$json"  | jq -r '.address')
-  mapfile -t workspaces < <(echo "$json"  | jq -r '.workspace.name')
+#  mapfile -t names < <(echo "$json"  | jq -r '.title')
+#  mapfile -t classes < <(echo "$json"  | jq -r '.class')
+#  mapfile -t ids < <(echo "$json"  | jq -r '.address')
+#  mapfile -t workspaces < <(echo "$json"  | jq -r '.workspace.name')
+
+  # Use grep instead of jq for performance
+  mapfile -t names < <(echo "$json"  | grep -oP '(?<="title": ")(.*)(?=",)')
+  mapfile -t classes < <(echo "$json"  | grep -oP '(?<="class": ")(.*)(?=",)')
+  mapfile -t ids < <(echo "$json"  | grep -oP '(?<="address": ")(.*)(?=",)')
+  mapfile -t workspaces < <(echo "$json"  | grep -oP '(?<="name": ")(.*)(?=")')
 
 #  end_time=$(date +%s.%3N)
 #
