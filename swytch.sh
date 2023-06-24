@@ -70,7 +70,8 @@ then
 #  }
 #  start_time=$(date +%s.%3N)
 
-  id_active=$(hyprctl activewindow -j | jq -r ".address")
+#  id_active=$(hyprctl activewindow -j | jq -r ".address")
+  id_active=$(hyprctl activewindow -j | grep -oP '(?<="address": ")(.*)(?=",)')
 
   # TODO: instead of calling jq for each variable, build some array of dicts
   json=$(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1)')
