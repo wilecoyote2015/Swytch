@@ -182,7 +182,7 @@ do
     fi
 
     if [[ ${icons[$class]+exists} ]]; then
-      icon=$icons[$class]
+      icon="${icons[$class]}"
     else
       # try to find icon by desktop name and class
       icon=$(find /usr/share/applications ${HOME}/.local/share/applications/ -name "*${class}.desktop" -exec grep -oP '(?<=Icon=).*' {} \; | head -1)
