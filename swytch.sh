@@ -151,7 +151,7 @@ mapfile -t windows_separators_spaced < <(printf '%s\n' "${windows_separators[@]}
 
 windows_separators_formatted=()
 
-start_time=$(date +%s.%3N)
+#start_time=$(date +%s.%3N)
 
 # store icons to avoid searching icons for known applications
 declare -A icons
@@ -199,9 +199,9 @@ do
     workspace_previous=$workspace
 done
 
-end_time=$(date +%s.%3N)
-elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
-echo time make array windows formatted: $elapsed
+#end_time=$(date +%s.%3N)
+#elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
+#echo time make array windows formatted: $elapsed
 
 if [ -z "$monitor_id" ]
 then
