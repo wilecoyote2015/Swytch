@@ -186,6 +186,10 @@ do
     workspace_previous=$workspace
 done
 
+#printf '%s\n' "${windows_separators_formatted[@]}"
+#echo "${windows_separators_formatted[@]}"
+
+
 #end_time=$(date +%s.%3N)
 #elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
 #echo time make array windows formatted: $elapsed
@@ -193,16 +197,15 @@ done
 #unset 'windows_separators_formatted[-1]'
 #start_time=$(date +%s.%3N)
 
-windows_formatted_str=$(printf '%s' "${windows_separators_formatted[@]}")
 #end_time=$(date +%s.%3N)
 #elapsed=$(echo "scale=3; $end_time - $start_time" | bc)
 #echo time make windows_formatted_str: $elapsed
 
 if [ -z "$monitor_id" ]
 then
-	idx_selected=$(echo -en $windows_formatted_str |  rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows -show-icons )
+	idx_selected=$(printf '%b' "${windows_separators_formatted[@]}" |  rofi -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows -show-icons )
 else
-	idx_selected=$(echo -en $windows_formatted_str |  rofi  -monitor $monitor_id -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows -show-icons )
+	idx_selected=$(printf '%b' "${windows_separators_formatted[@]}"  |  rofi  -monitor $monitor_id -dmenu -i -p "$command_" -a "$index_workspace_active" -format i -selected-row "$index_window_last_active" -no-custom -s -width 80 -lines 30 -markup-rows -show-icons )
 fi
 
 # if no entry selected (e.g. user exitted with escape), end
