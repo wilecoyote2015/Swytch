@@ -58,28 +58,12 @@ then
 
 elif [ "$XDG_CURRENT_DESKTOP" == "Hyprland" ]
 then
-  # TODO: how to return array from function?
-#  function make_array_windows {
-#      # Read the JSON array into a variable
-#      json=$(hyprctl clients -j)
-#
-#      # Extract the desired values using jq and save them in an array
-#      mapfile -t result < <(echo "$json" | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1) | '$1'')
-#
-#      # Print the array elements (for debugging)
-#      printf '%s\n' "${result[@]}"
-#  }
-#  start_time=$(date +%s.%3N)
-
-#  id_active=$(hyprctl activewindow -j | jq -r ".address")
   id_active=$(hyprctl activewindow -j | grep -oP '(?<="address": ")(.*)(?=",)')
 
   # TODO: instead of calling jq for each variable, build some array of dicts
-  json=$(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1)')
-#  mapfile -t names < <(echo "$json"  | jq -r '.title')
-#  mapfile -t classes < <(echo "$json"  | jq -r '.class')
-#  mapfile -t ids < <(echo "$json"  | jq -r '.address')
-#  mapfile -t workspaces < <(echo "$json"  | jq -r '.workspace.name')
+  # Remark: I do not understand why hyprctl clients returns some emtpy clients sometimes (with class=""),
+  #   but they must be excluded.
+  json=$(hyprctl clients -j | jq -r 'sort_by(.workspace.name)[] | select(.workspace.id != -1 and .class != "")')
 
   # Use grep instead of jq for performance
   mapfile -t names < <(echo "$json"  | grep -oP '(?<="title": ")(.*)(?=",)')
@@ -162,6 +146,8 @@ do
     window=${windows_separators_spaced[$index_window]}
     workspace=${workspaces[$index_window]}
     class=${classes[$index_window]}
+
+
 
     # if window has different workspace than previous, use next color. Cycle through colors
     if [ "$workspace" != "$workspace_previous" ] && [ ! -z "$workspace_previous" ]
